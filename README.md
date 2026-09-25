@@ -1,10 +1,9 @@
-
 ## Description
 
 `vampy-cli` is a command-line utility for interacting with the Vampy server.  
 It allows you to manage products, repositories, perform scanning processes, and much more.
 
-`vampy-cli` is easy to use in CI/CD pipelines to run scans and stop piplines if the scan fails or the scan results do not match the specified release criteria (Security Quality Gates)
+`vampy-cli` is easy to use in CI/CD pipelines to run scans and stop pipelines if the scan fails or the scan results do not match the specified release criteria (Security Quality Gates)
 
 
 ## What is Vampy?
@@ -18,7 +17,7 @@ You can install `vampy-cli` using the `curl` utility script or download a precom
 ### Installation with `curl`
 
 ```
-$ curl -sSL https://get.vampy.ru | sh
+$ curl -sSL https://get.hexway.ru | sh
 ```
 
 ### Download compiled binaries
@@ -28,7 +27,7 @@ The [Releases](https://github.com/hexway/Vampy-CLI/releases) page on GitHub cont
 ### Use Docker image
 
 ```bash
-export VAMPY_CLI_VERSION=0.1.0
+export VAMPY_CLI_VERSION=0.12.0
 docker run \
   registry.hexway.io/hexway/vampy-cli:${VAMPY_CLI_VERSION} \
   help
@@ -43,22 +42,25 @@ vampy-cli [global options] command [command options]
 ## Available Commands
 
 - **`upload`**  
-  Uploads existing scan results.
+  Uploads existing scan results. For incremental CI scans use `--skip-auto-resolve`.
 
 - **`scan`**  
   Starts the scan process for the specified repository and scanner.
 
-- **`quality-gate`**  
-  Displays the QualityGate results for the selected product or repository.
+- **`sqg`**  
+  Displays the Quality Gate results for the selected product or repository.
 
 - **`bg-task`**  
   Checks the status of a background task and provides details.
 
-- **`products`**  
-  Retrieves the list of products.
+- **`list`**  
+  Lists resources. Subcommands: `products`, `repos`, `scanners`, `scan-profiles`, `sqg`, `pipelines`.
 
-- **`repositories`**  
-  Retrieves the list of repositories.
+- **`pipeline`**  
+  Manages scan pipelines. Subcommands: `create`, `list`, `status`, `finish`.
+
+- **`service`**  
+  Service commands. Subcommands: `sync-artifact` (registry versions), `sync-repo` (VCS branches).
 
 - **`help, h`**  
   Displays a list of available commands or help for a specific command.
@@ -82,8 +84,11 @@ vampy-cli [global options] command [command options]
 | --------------------- | ---------------------------------------------------------------------------------- | ----------------------------- |
 | `--api-token value`   | API token for connecting to the Vampy server (or value from environment variable). | `value from $VAMPY_API_TOKEN` |
 | `--api-version value` | Vampy API version.                                                                 | `v1`                          |
+| `--ignore-ssl-check`  | Skip SSL certificate verification when connecting to the Vampy server.             | `false`                       |
 | `--timeout value`     | Timeout in seconds.                                                                | `120`                         |
 | `--vampy-url value`   | URL of the Vampy server (or value from environment variable).                      | `value from $VAMPY_URL`       |
+
+Command line arguments take precedence over environment variables.
 
 
 ## Configuration
@@ -104,14 +109,14 @@ export VAMPY_API_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJl
 export VAMPY_URL=https://vampy.hexway.io
 
 # get repositories list
-./vampy_cli repositories
+./vampy_cli list repos
 ```
 
 ### Command line options
 
 ```bash
 # get repositories list
-./vampy_cli --vampy-url https://vampy.hexway.io  --api-token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InZtcC1jbGkiLCJpYXQiOjE3MzM5MzI2MDYuNjk1Mjk4fQ.TNWsDdhpct6PhZ0jTBZ7QTQyFuMzLN2oBr99e3uhRkA products
+./vampy_cli --vampy-url https://vampy.hexway.io  --api-token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InZtcC1jbGkiLCJpYXQiOjE3MzM5MzI2MDYuNjk1Mjk4fQ.TNWsDdhpct6PhZ0jTBZ7QTQyFuMzLN2oBr99e3uhRkA list repos
 ```
 
 ## Example Usage
@@ -126,9 +131,9 @@ export VAMPY_URL=https://vampy.hexway.io
 ./vampy_cli scan --repository vmp/product/vampy-engine --check-task --details
 ```
 
-### Display QualityGate results
+### Display Quality Gate results
 ```bash
-vampy-cli quality-gate --verbose
+vampy-cli sqg --verbose
 ```
 
 ### Check background task status
@@ -136,14 +141,23 @@ vampy-cli quality-gate --verbose
 ./vampy_cli bg-task --task-id <task-id> --details
 ```
 
-### Retrieve the list of products
+### Retrieve lists
 ```bash
-./vampy_cli products
+./vampy_cli list products
+./vampy_cli list repos
+./vampy_cli list scanners
 ```
 
-### Retrieve the list of repositories
+### Scan pipeline
 ```bash
-./vampy_cli repositories
+./vampy_cli pipeline create --repository my-repository --pipeline-id "$CI_COMMIT_SHA"
+./vampy_cli pipeline status --pipeline-id "$CI_COMMIT_SHA" --check-pipeline
+```
+
+### Sync integrations
+```bash
+./vampy_cli service sync-repo --repository=my-repo
+./vampy_cli service sync-artifact --artifact=vampy-engine --product=vampy
 ```
 
 If you have any questions or issues, use the help command:
